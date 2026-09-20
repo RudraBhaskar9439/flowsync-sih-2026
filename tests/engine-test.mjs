@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {createNodes,seedProfile,schedule,status,transition,topology,expiryState,alerts} from '../dist/engine.mjs';
+const n=createNodes(), s=schedule(n);
+assert.equal(s.total,30);assert.equal(s.serial,59);assert.deepEqual(s.critical,['entity','cte','factory','ready']);
+assert.throws(()=>transition(n,'factory','start',20),/Invalid/);
+transition(n,'plan','approve',20);assert.equal(status(n.find(x=>x.id==='fire'),n),'ready');assert.equal(status(n.find(x=>x.id==='factory'),n),'blocked');
+transition(n,'cte','approve',21);assert.equal(status(n.find(x=>x.id==='factory'),n),'ready');
+transition(n,'factory','start',21);assert.equal(n.find(x=>x.id==='factory').start,21);assert.throws(()=>transition(n,'factory','start',21));
+assert.throws(()=>topology([{id:'a',deps:['b']},{id:'b',deps:['a']}]),/cycle/);assert.throws(()=>topology([{id:'a',deps:['missing']}]),/dependency/);
+const small=createNodes({...seedProfile,workers:5,effluent:false});assert.equal(small.length,5);assert.equal(schedule(small).total,27);
+assert.equal(expiryState('2026-01-01',new Date('2026-02-01')).label,'Expired');assert.equal(expiryState('2026-02-15',new Date('2026-02-01')).label,'Expires soon');assert.equal(expiryState('2026-05-01',new Date('2026-02-01')).label,'Within date');
+assert.equal(alerts({nodes:createNodes(),day:20}).length,2);
+console.log('PASS: scheduling, critical path, dependency gating, transitions, cycle detection, conditional rules, expiry and SLA alerts');

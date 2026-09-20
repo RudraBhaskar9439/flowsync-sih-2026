@@ -2,3 +2,8 @@ work/
 outputs/
 .sites-runtime/
 .DS_Store
+
+.vercel/
+.env
+.env.*
+node_modules/
